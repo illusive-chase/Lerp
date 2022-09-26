@@ -57,9 +57,13 @@ public:
 				hint = m_dt.insert(m_points[i], hint);
 				m_handles[hint] = static_cast<int>(i);
 			}
-			m_valid = m_dt.is_valid();
+			m_valid = m_dt.is_valid() && m_dt.current_dimension() == D;
 		}
 	}
+
+    int dim() const {
+        return m_dt.current_dimension();
+    }
 
 	bool is_valid() const {
 		return m_valid;
@@ -89,8 +93,7 @@ public:
 		auto ch = m_dt.locate(p);
 		size_t i = 0;
 		for (auto it = ch->vertices_begin(); it != ch->vertices_end(); ++it) {
-			if (!m_handles.count(*it)) continue;
-			if (i >= D + 1) return std::nullopt;
+			if (!m_handles.count(*it)) return std::nullopt;
 			idxs[i] = m_handles[*it];
 			points.col(i) = Eigen::Array<Scalar, 1, D>(m_points[idxs[i]].data());
 			++i;
@@ -107,7 +110,7 @@ public:
 		}
 		return std::make_pair(idxs, weights);
 	}
-
+    
 };
 
 template<int D, typename T> Lerp(const std::vector<std::array<T, D>>&)->Lerp<D, T>;
@@ -117,9 +120,9 @@ template<int D, typename T> Lerp(const std::vector<std::array<T, D>>&)->Lerp<D, 
 int main()
 {
 	std::vector<std::array<double, 2>> points = {
-		{0,0},
 		{0,1},
-		{1,0}
+		{0,2},
+		{1,1}
 	};
 
 	Lerp lerp{ points };
@@ -129,8 +132,8 @@ int main()
 	lerp.dump(std::cout);
 	std::cout << std::endl;
 
-	auto result = lerp.interp(std::array<double, 2>{ 0.5, 0.5 });
-	if (result == std::nullopt) return 1;
+	auto result = lerp.interp(std::array<double, 2>{ 1.5, 1.5 });
+	if (result == std::nullopt) return -1;
 	auto&& [idxs, weights] = *result;
 
 	for (int idx : idxs) {
